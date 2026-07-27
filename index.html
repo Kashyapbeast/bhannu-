@@ -216,6 +216,21 @@
 
   .nav-row{ display:flex; justify-content:space-between; margin-top:30px; }
 
+  .dodge-container{
+    position:relative; width:100%; height:210px;
+    border:1px dashed rgba(217,164,65,0.2); border-radius:14px;
+    margin-top:6px; overflow:hidden;
+  }
+  .yes-option{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    width:auto; text-align:center;
+  }
+  .dodge-btn{
+    position:absolute; top:20px; left:20px;
+    transition:top .18s ease, left .18s ease;
+    width:auto; z-index:5;
+  }
+
   textarea.qa-input{
     width:100%; min-height:90px; margin-top:6px; padding:14px 16px;
     background:rgba(255,255,255,0.04); border:1px solid rgba(217,164,65,0.25);
@@ -311,11 +326,12 @@
     <div class="card">
       <div class="q-title">When you think of "us," what's the very first memory that shows up?</div>
       <div class="options">
-        <button class="option">The day we first met</button>
-        <button class="option">Our first proper date</button>
-        <button class="option">A random, silly moment we still laugh about</button>
-        <button class="option">A quiet ordinary evening, nothing special, just us</button>
+        <button class="option">The Bhogal bhature</button>
+        <button class="option">The first metro meet</button>
+        <button class="option">Our fights 😄</button>
+        <button class="option option-custom" data-target="q1-custom">The best I can think of (let me write it)</button>
       </div>
+      <textarea class="qa-input" id="q1-custom" style="display:none;" placeholder="Write it here..."></textarea>
       <div class="reveal">Whichever one it was — I remember it too. And I still smile thinking about it.</div>
       <div class="nav-row"><span></span><button class="btn nextBtn" disabled>Next</button></div>
     </div>
@@ -339,7 +355,7 @@
   <!-- Q3 -->
   <div class="q-step" data-step="3">
     <div class="card">
-      <div class="q-title">If I'm being fair to you — what's one thing I could've done better recently?</div>
+      <div class="q-title">I know I could've done a lot better — but tell me, what's the one most important thing I could've done?</div>
       <textarea class="qa-input" placeholder="You can write freely here, I really want to know..."></textarea>
       <div class="nav-row"><span></span><button class="btn nextBtn">Next</button></div>
     </div>
@@ -357,14 +373,8 @@
   <!-- Q5 -->
   <div class="q-step" data-step="5">
     <div class="card">
-      <div class="q-title">On a scale of "meh" to "head over heels," how did you feel about us before the fights started?</div>
-      <div class="options">
-        <button class="option">Head over heels, honestly</button>
-        <button class="option">Really happy, comfortable, safe</button>
-        <button class="option">Good, but I wanted us to try a little harder</button>
-        <button class="option">Unsure — and that scared me</button>
-      </div>
-      <div class="reveal">Thank you for being honest. That's all I ever want from us — honesty, even when it's hard.</div>
+      <div class="q-title">What do you think is the main cause of our fights?</div>
+      <textarea class="qa-input" placeholder="Be as honest as you want, I want to actually understand it..."></textarea>
       <div class="nav-row"><span></span><button class="btn nextBtn" disabled>Next</button></div>
     </div>
   </div>
@@ -387,13 +397,13 @@
   <!-- Q7 -->
   <div class="q-step" data-step="7">
     <div class="card">
-      <div class="q-title">Do you still hear "O Re Piya" the way we used to — as kind of "our" song?</div>
-      <div class="options">
-        <button class="option">Yes, always will</button>
-        <button class="option">I'd forgotten, but hearing it now brought it back</button>
-        <button class="option">I want it to mean that again</button>
+      <div class="q-title">Will you go on a trip with me next month?</div>
+      <p style="color:var(--gold-soft); font-family:'Cormorant Garamond',serif; font-style:italic; font-size:16px; margin-bottom:6px;">(go on, try clicking "No")</p>
+      <div class="dodge-container">
+        <button class="option yes-option">Yes, let's go</button>
+        <button class="option dodge-btn no-dodge">No</button>
       </div>
-      <div class="reveal">Then let's let this be a small new beginning to it. Listen close.</div>
+      <div class="reveal">Knew it. Consider this booked in spirit already — I'm planning it for real.</div>
       <div class="nav-row"><span></span><button class="btn nextBtn" disabled>Next</button></div>
     </div>
   </div>
@@ -420,12 +430,12 @@
   <div class="q-step" data-step="10">
     <div class="card">
       <div class="q-title">Last one. Can I have a real chance to make this right?</div>
-      <div class="options">
-        <button class="option">Yes, let's talk properly</button>
-        <button class="option">I need a little more time, but yes eventually</button>
-        <button class="option">Show me, don't just tell me</button>
+      <p style="color:var(--gold-soft); font-family:'Cormorant Garamond',serif; font-style:italic; font-size:16px; margin-bottom:6px;">(go on, try clicking "No")</p>
+      <div class="dodge-container">
+        <button class="option yes-option">Yes, let's talk properly</button>
+        <button class="option dodge-btn no-dodge">No</button>
       </div>
-      <div class="reveal">Whatever you chose — thank you for getting this far with me. Come see the rest.</div>
+      <div class="reveal">Thank you for getting this far with me. Come see the rest.</div>
       <div class="nav-row"><span></span><button class="btn" id="toTimelineBtn" disabled>Continue</button></div>
     </div>
   </div>
@@ -571,6 +581,7 @@
   const steps = Array.from(document.querySelectorAll('.q-step'));
   let currentStep = 1;
   const totalSteps = steps.length;
+  const answers = {}; // collects every answer, keyed by q1..q10
 
   function showStep(n){
     steps.forEach(s=>s.classList.remove('active'));
@@ -582,32 +593,146 @@
   showStep(currentStep);
 
   steps.forEach(step=>{
-    const options = step.querySelectorAll('.option');
+    const stepNum = step.dataset.step;
+    const qKey = 'q' + stepNum;
+    const options = step.querySelectorAll('.option:not(.option-custom):not(.yes-option):not(.dodge-btn)');
+    const customOption = step.querySelector('.option-custom');
     const reveal = step.querySelector('.reveal');
     const nextBtn = step.querySelector('.nextBtn') || step.querySelector('#toTimelineBtn');
+    const mainTextarea = step.querySelector('textarea.qa-input:not([id])');
+    const yesOption = step.querySelector('.yes-option');
+    const dodgeBtn = step.querySelector('.dodge-btn');
 
+    // regular options (Q1's fixed choices, Q2, Q6)
     options.forEach(opt=>{
       opt.addEventListener('click', ()=>{
         options.forEach(o=>o.classList.remove('selected'));
+        if(customOption) customOption.classList.remove('selected');
         opt.classList.add('selected');
+        answers[qKey] = opt.textContent.trim();
         if(reveal){ reveal.classList.add('show'); }
         if(nextBtn){ nextBtn.disabled = false; }
       });
     });
 
-    const textarea = step.querySelector('.qa-input');
-    if(textarea && nextBtn){
-      // text steps: next button already enabled, no gating required
+    // "write your own" custom option (Q1)
+    if(customOption){
+      const customField = document.getElementById(customOption.dataset.target);
+      customOption.addEventListener('click', ()=>{
+        options.forEach(o=>o.classList.remove('selected'));
+        customOption.classList.add('selected');
+        customField.style.display = 'block';
+        customField.focus();
+        if(reveal){ reveal.classList.add('show'); }
+        if(nextBtn){ nextBtn.disabled = customField.value.trim().length === 0; }
+      });
+      if(customField){
+        customField.addEventListener('input', ()=>{
+          answers[qKey] = customField.value.trim();
+          if(nextBtn){ nextBtn.disabled = customField.value.trim().length === 0; }
+        });
+      }
+    }
+
+    // plain textarea questions (Q3, Q4, Q5, Q8, Q9)
+    if(mainTextarea && nextBtn){
+      mainTextarea.addEventListener('input', ()=>{
+        answers[qKey] = mainTextarea.value.trim();
+      });
+    }
+
+    // Yes / runaway-No questions (Q7, Q10)
+    if(yesOption){
+      yesOption.addEventListener('click', ()=>{
+        yesOption.classList.add('selected');
+        answers[qKey] = 'Yes';
+        if(reveal){ reveal.classList.add('show'); }
+        if(nextBtn){ nextBtn.disabled = false; }
+      });
+    }
+    if(dodgeBtn){
+      const container = step.querySelector('.dodge-container');
+
+      function randomPos(){
+        const cw = container.clientWidth, ch = container.clientHeight;
+        const bw = dodgeBtn.offsetWidth || 80, bh = dodgeBtn.offsetHeight || 40;
+        const x = Math.max(6, Math.random()*(cw-bw-12));
+        const y = Math.max(6, Math.random()*(ch-bh-12));
+        dodgeBtn.style.left = x+'px';
+        dodgeBtn.style.top = y+'px';
+      }
+      // put it somewhere reasonable on load
+      setTimeout(randomPos, 50);
+
+      function dodgeAway(clientX, clientY){
+        const rect = container.getBoundingClientRect();
+        const btnRect = dodgeBtn.getBoundingClientRect();
+        const btnCenterX = btnRect.left + btnRect.width/2 - rect.left;
+        const btnCenterY = btnRect.top + btnRect.height/2 - rect.top;
+        const mouseX = clientX - rect.left;
+        const mouseY = clientY - rect.top;
+        let dx = btnCenterX - mouseX;
+        let dy = btnCenterY - mouseY;
+        const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+        dx /= dist; dy /= dist;
+        const jump = 90; // how far it leaps away each time
+        let newX = btnCenterX + dx*jump - btnRect.width/2;
+        let newY = btnCenterY + dy*jump - btnRect.height/2;
+        const maxX = container.clientWidth - btnRect.width - 6;
+        const maxY = container.clientHeight - btnRect.height - 6;
+        if(newX < 6 || newX > maxX) newX = Math.random()*(maxX-6)+6;
+        if(newY < 6 || newY > maxY) newY = Math.random()*(maxY-6)+6;
+        dodgeBtn.style.left = newX+'px';
+        dodgeBtn.style.top = newY+'px';
+      }
+
+      container.addEventListener('mousemove', (e)=>{
+        const rect = dodgeBtn.getBoundingClientRect();
+        const dx = e.clientX - (rect.left+rect.width/2);
+        const dy = e.clientY - (rect.top+rect.height/2);
+        const dist = Math.sqrt(dx*dx+dy*dy);
+        if(dist < 85){ dodgeAway(e.clientX, e.clientY); }
+      });
+      dodgeBtn.addEventListener('mouseenter', ()=>{
+        const rect = dodgeBtn.getBoundingClientRect();
+        dodgeAway(rect.left+rect.width/2, rect.top+rect.height/2 + 1);
+      });
+      dodgeBtn.addEventListener('touchstart', (e)=>{
+        e.preventDefault();
+        randomPos();
+      }, {passive:false});
     }
 
     if(nextBtn){
       nextBtn.addEventListener('click', (e)=>{
-        if(nextBtn.id === 'toTimelineBtn') return; // handled by dedicated listener above
+        if(nextBtn.id === 'toTimelineBtn'){
+          submitAnswersToSheet();
+          return; // navigation to timeline handled by its own listener
+        }
         currentStep++;
         showStep(currentStep);
       });
     }
   });
+
+  // ---- send all answers to Google Sheets ----
+  const GOOGLE_SHEETS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwaF1QX0rXYTlraQEhlHlzaJDyQe39QY3EsZALIcakeHMiXwe79mdPCYzcyWo1AXdhHKQ/exec";
+  let alreadySubmitted = false;
+
+  function submitAnswersToSheet(){
+    if(alreadySubmitted) return;
+    if(!GOOGLE_SHEETS_WEB_APP_URL || GOOGLE_SHEETS_WEB_APP_URL.indexOf('PASTE_') === 0){
+      console.log('Google Sheets URL not set yet. Answers collected locally:', answers);
+      return;
+    }
+    alreadySubmitted = true;
+    fetch(GOOGLE_SHEETS_WEB_APP_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(answers)
+    }).catch(err=>console.log('Could not submit answers:', err));
+  }
 </script>
 
 </body>
